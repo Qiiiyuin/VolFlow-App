@@ -132,7 +132,7 @@ fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Uni
                     Column {
                         Text("VolFlow是个开源项目。")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("GitHub: https://github.com/yourname/VolFlow", color = MaterialTheme.colorScheme.primary)
+                        Text("GitHub: https://github.com/Qiiiyuin/VolFlow-App", color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 confirmButton = { TextButton(onClick = { showSupportDialog = false }) { Text("确定") } }
