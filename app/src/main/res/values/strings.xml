@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">VolFlow</string>
+    <string name="btn_start_recording">Start Recording</string>
+    <string name="btn_stop_recording">Stop Recording</string>
+    <string name="btn_save_replay">Save Past 5 Mins</string>
+    <string name="txt_memory_usage">Current Memory Usage:</string>
+    <string name="notification_title">Background Recording</string>
+    <string name="notification_content">Replay Buffer is active...</string>
+    <string name="toast_save_success">Replay saved successfully!</string>
+    <string name="toast_permission_denied">Microphone permission denied!</string>
+</resources>
