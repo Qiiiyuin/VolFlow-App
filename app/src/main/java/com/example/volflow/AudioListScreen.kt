@@ -33,11 +33,19 @@ fun AudioListScreen(onBack: () -> Unit) {
     val itemsPerPage = 5
 
     // 实时扫描系统 /Music/VolFlow 目录下的 wav 文件
+// 核心修复 2：引入 Dispatchers.IO 异步线程隔离，防止扫描磁盘阻塞主线程导致录音进程突发停滞
     LaunchedEffect(Unit) {
-        val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "VolFlow")
-        if (folder.exists() && folder.isDirectory) {
-            fileList = folder.listFiles { file -> file.extension == "wav" }
-                ?.sortedByDescending { it.lastModified() } ?: emptyList()
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "VolFlow")
+            if (folder.exists() && folder.isDirectory) {
+                val files = folder.listFiles { file -> file.extension == "wav" }
+                    ?.sortedByDescending { it.lastModified() } ?: emptyList()
+
+                // 扫描完毕后，切回主线程安全刷新UI
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    fileList = files
+                }
+            }
         }
     }
 

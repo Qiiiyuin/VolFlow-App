@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 
-// 极简零依赖页面路由
 enum class AppScreen { MainControl, AudioFileList }
 
 class MainActivity : ComponentActivity() {
@@ -40,12 +39,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
+                // 核心修复 1：将页面路由与录音运行状态提升至顶级作用域，杜绝因界面切换导致的状态销毁
                 var currentScreen by remember { mutableStateOf(AppScreen.MainControl) }
+                var isServiceRunning by remember { mutableStateOf(false) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     when (currentScreen) {
                         AppScreen.MainControl -> MainControlPanel(
                             modifier = Modifier.padding(innerPadding),
+                            isServiceRunning = isServiceRunning,
+                            onServiceStateChange = { isServiceRunning = it },
                             onNavigateToFiles = { currentScreen = AppScreen.AudioFileList }
                         )
                         AppScreen.AudioFileList -> AudioListScreen(
@@ -59,13 +62,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Unit) {
+fun MainControlPanel(
+    modifier: Modifier = Modifier,
+    isServiceRunning: Boolean,
+    onServiceStateChange: (Boolean) -> Unit,
+    onNavigateToFiles: () -> Unit
+) {
     val context = LocalContext.current
-    var isServiceRunning by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 主体中央控制台
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -88,8 +94,12 @@ fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Uni
                     val intent = Intent(context, RecordingService::class.java).apply {
                         action = if (isServiceRunning) RecordingService.ACTION_STOP else RecordingService.ACTION_START
                     }
-                    if (isServiceRunning) context.stopService(intent) else context.startForegroundService(intent)
-                    isServiceRunning = !isServiceRunning
+                    if (isServiceRunning) {
+                        context.stopService(intent)
+                    } else {
+                        context.startForegroundService(intent)
+                    }
+                    onServiceStateChange(!isServiceRunning)
                 },
                 modifier = Modifier.fillMaxWidth(0.85f).height(56.dp)
             ) {
@@ -106,7 +116,6 @@ fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Uni
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 新增：音频文件管理入口
             OutlinedButton(
                 onClick = onNavigateToFiles,
                 modifier = Modifier.fillMaxWidth(0.85f).height(56.dp)
@@ -115,7 +124,6 @@ fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Uni
             }
         }
 
-        // 右下角“支持”悬浮按钮
         TextButton(
             onClick = { showSupportDialog = true },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
@@ -123,7 +131,6 @@ fun MainControlPanel(modifier: Modifier = Modifier, onNavigateToFiles: () -> Uni
             Text(text = "支持", fontSize = 16.sp, color = MaterialTheme.colorScheme.outline)
         }
 
-        // “支持”弹窗
         if (showSupportDialog) {
             AlertDialog(
                 onDismissRequest = { showSupportDialog = false },
